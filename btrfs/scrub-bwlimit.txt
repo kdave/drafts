@@ -1,0 +1,74 @@
+﻿Scrub IO bandwidth control (for real)
+-------------------------------------
+
+Currently it's possible to specify io priority class for scrub, but it does
+not really work as expected. The io priority is not applied to threads that
+actually do the IO ...
+
+Instead of controlling io priority dynamically, ie. scrub submits data as fast
+as possible and the scheduling is left for the io scheduler, limit the
+bandwidth via user request.
+
+- changes needed
+    * add new item to scrub control struct, there's enough for it, 'bwlimit'
+    * when scrub wants to submit a page for read
+
+** look if the bwlimit proportion since last tick is met
+** if current < bwlimit, submit page, account new data submitted and record last tick
+** if it's reached, sleep for a second/milisecond
+
+maybe check device congestion, but it's not necessary
+
+TODO
+----
+
+verify that readahead does not kill the intentions, possibly add bwlimit there instead of scrub
+
+Limit algo
+----------
+
+bwlimit - number of bytes per second
+tick - minimal amount of time for accounting, 100 us (jiffies_to_usec)
+last - last time we've submitted
+acc - accounted size since last change of last
+
+- on submit
+
+delta = now - last /* round down to tick granularity */
+last = now
+if we are in the same tick as last:
+	if acc < bwlimit/tick
+		return can_submit;
+		acc++;
+	else
+		return cannot_submit;
+	fi
+else
+	/* new tick, assume previous limit was honored, we can start afresh */
+	return can_submit;
+	acc = 1;
+fi
+
+IOW: submit as much as possible within one tick
+
+bandwidth granularity:
+
+- if the tick was 1ms, we'd be able to limit to 4MB/s as minimum:
+
+4 KB/1 ms === 4 MB/s =~= 4000 KB/s
+
+where 4KB is one page, we cannot go under that.
+
+- with 100us granularity, it's 10x smaller:
+
+4 KB/100 us === 400 KB/s
+
+and the estimated error from the user supplied bwlimit value is 400kb/s, still
+within noise unlike 4MB/s with 1ms gran.
+
+- the framework does only accounting and returns yes/no if it's ok
+  bwlimit-wise, the actual read submission or waiting is up to the caller.
+
+- use congestion_wait and schedule_timeout/io_schedule where appropriate
+
+- need to check exit condition during waiting
