@@ -1,0 +1,36 @@
+﻿Progs with a better output format
+---------------------------------
+
+Allow a machine readable output for various commands in progs.
+
+- one global option to specify the output type
+- global options to affect the type and more specific formats, eg. if the
+  header should be printed or only the raw structured data
+- potential output format: json, xml, plain text, yaml
+  - preferred: json, plain
+- options might have specific formats for columns, sorting etc
+- consistency is important
+- make way for future changes, do not get too much into specifications though
+
+- not all commands will be aple to print that, only best effort
+
+Interface:
+
+$ btrfs --format=json subvolume list /
+
+{
+	version: 1,
+	header: {
+		{ name: "id", type: integer},
+		{ name: "path", type: string}
+	},
+	list: {
+		{ 256, "subv1"},
+		{ 257, "subv2"}
+	},
+	footer {... whatever },
+	summary {... whatever}
+}
+
+- structured lists in case the format is one-line, unique to the command
+- key-value, value might be term or structured data

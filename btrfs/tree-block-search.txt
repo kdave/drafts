@@ -1,0 +1,25 @@
+﻿Tree block search ioctl
+-----------------------
+
+Search a tree block according intersecting a key range. Purpose is mainly for
+debugging, maybe for some statistics and curious apps.
+
+* fill buffer only with items from one single block
+* advance the key for next round
+* fill other metadata of the block
+
+the purpose is to get to the btrfs_header:
+* fsid (not really necessary)
+* checksum
+* address
+* generation
+* owner (subvolid)
+* nritems
+* level
+
+intentionally left out:
+* chunk tree uuid
+
+- questions
+
+add a way to go to the non-leaf nodes? ie. add range for the levels

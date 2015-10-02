@@ -1,0 +1,38 @@
+﻿More checksum algorithms
+------------------------
+
+There’s a patchset adding SHA256, we need generic changes first.
+
+- remove all assumptions from 4 byte crc32, arrays, local variables etc
+
+- incompatibility
+
+we need to add an incompat bit to the superblock
+
+the superblock is protected by a checksum that’s stored inside it, old kernel
+must not mount such filesytem. the incompat bit would have to be trusted to
+see before the checksum is verified. in case of corruption, both invalid
+incompat bits or checksum are caught.
+
+- algorithms
+
+after some discussions, we should pick some fast and some crpytographically
+secure.
+
+  * sha256 -- slow, crypto-strength
+
+it does not help to combine more algos, consumes cpu time but does not add too
+much protection.
+
+unsure -- we don’t want to pick different algos for metadata and data.
+metadata have space only for sha256 (16 bytes), the CSUM_ITEM is flexible in
+size and can be arbitrarily long, ie. sha512 is possible.
+
+- implementation
+
+the sha256 helper structures are alrger than plain crc32c u32, we might want
+to add special code paths so we don’t bloat stack for default crc32c.
+
+- references
+
+some discussions in the mailinglist, about combinig more algos etc.

@@ -1,0 +1,10 @@
+﻿Send stream abuse
+-----------------
+
+Send stram is just a sequence of instructions to modify a file. This can be
+crafted to the extent that it can transfer just file/directory changes without
+the need for the received subvolume that’s required for normal receive.
+
+Probably would work only for some send items and might wreak havoc to the
+existing files (ie. unexpected to the user, otherwise would be a valid
+filesystem data).

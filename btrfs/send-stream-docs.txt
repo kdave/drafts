@@ -1,0 +1,26 @@
+﻿FAR stream description
+----------------------
+
+version 1, used in btrfs
+
+- General structure
+
+  * stream header - “btrfs-stream1” for version 1
+  * sequence of items, repeat, optional
+  * end of stream markers, optional
+
+- items
+
+items are TLV: tag-length-value
+
+followed by a checksum (crc32c)
+
+- list of tags
+
+...
+
+- end of stream marker usage
+
+- references
+
+far-dump

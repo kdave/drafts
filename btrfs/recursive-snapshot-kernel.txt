@@ -1,0 +1,116 @@
+﻿Recursive snapshot in kernel
+----------------------------
+
+Atomically and recursively snapshot a complete subtree of a subvolume
+hierarchy.
+
+challenges:
+- atomicity - possibly needs a global lock for the whole operation or maybe a
+  more fine grained lock that would block only subvolume creation on the
+  subtree
+
+counter example:
+
+A
++B
+ +C
+
+If we snapshot A recursively, then we must not allow subvolume creation under
+A, B or C until the new snapA is created.
+
+- post-creation changes to non-existing subvolumes
+
+Currently, a snapshot just COWs root block of A, and adds a reference to the
+tree_root. Any sub-subvolume of A will exist as empty-subvol in snapA. This
+happens transparently and does not need any changes during the snapshot step.
+
+For recursive snapshot, we have to replace the empty-subvol under snapA with
+actual snapshots from any sub-subvolume.
+
+The situation
+
+A
++B
+ +C
+
+1. create snapshot of A - only the tree root, no references in the tree_root,
+at this point snapA is equvalent to a deleted snapshot but does not exist in
+the dead_tree list yet.
+
+snapA
++emptyB
+
+
+2. replace empty subvols under snapA
+
+snapA
++snapB
+ +emptyC
+
+create an inode representing snapB and connect it to the directory entry
+reprezenting emptyB
+
+no tree_root reference yet, same as in step 1
+
+3. repeat the same for emptyC and all remaining from the snapA subtree
+
+4. atomically add back references of snapA, ... to the tree_root
+
+if this operation is created before 4 is persistent on disk, all currently
+created subvolumes will be treated as deleted on the next mount and will be
+deleted once cleaner wakes up.
+
+the COW semantics guarantees that either no subvolume will appear in the
+filesystem, or all will appear at once, provided that the insertion of
+backreferences into the tree_root is protected by a single lock.
+
+5. the dentry instantiation should happen in step 4 from in the depth-last
+order, ie. all subdirectories will exist prior the parent directory
+representing the new subvolumes.
+
+this has to be verified with VFS folks, as the dentry constrains might require
+the exact oposite, ie. parents first (depth-first order). our reason for the
+depth-last is to avoid a situation where the eg. snapA is instantiated but due
+to delays the snapB is not yet instantiated and would give an undefined
+result. probably emptyB, which breaks the atomicity requirement.
+
+- limitations
+
+all the sub-subvolumes have to be collected prior to the commit, this can be
+performance intensive if the data are cold on disk. in combination with the
+global lock, this could hurt.
+
+unknown at the moment, the memory requirements to represent the pending and
+finished work:
+
+- rollback
+
+reasons for early failure:
+  * not enough memory to allocate tmp structures -- unlikely
+  * not enough disk space -- likely in case the system is near-full
+
+depending on the phase, the rollback will be increasingly harder by each step.
+
+  * new fs_tree roots -- delete and unlink block, likely to succeed
+
+  * tree_root backreferences -- if this is protected by the global lock,
+    nobody should be able to reach them, and directory traversal will not
+    reach them due to lack of instantiated dentries
+
+  * instantiated dentries -- if we instantiate from the bottom up, rollback is
+    easy, at worst all but the snapA exist but will be inaccessible thus
+    unreferenced and easy to drop
+
+- keep in mind
+
+  * add new UUIDs to uuid tree
+  * possibly protect against sending all affected subvols (and block if
+    thery’re under send)
+  * subvols are in radix tree
+
+- extensions
+
+add a property to stop snapshotting recursion? or is it too crazy
+
+usecase: carefully define subvol hierarchies and allow snapshotting from the
+top

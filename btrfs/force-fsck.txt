@@ -1,0 +1,36 @@
+﻿dangerous repair, forced fsck
+-----------------------------
+
+Add options to fsck to run on a mounted filesystem, regardless if it’s RO 
+
+33 Related to that:
+34
+35 There are other, dangerous, scenarios where it would be desired to
+36 override the exclusive open and perform a surgery on a live filesystem.
+37 This is motivated by 'xfs_repair -d', that's been mentioned on the list
+38 in the past. The usecases I see:
+39
+40 * run RO fsck on a mounted and hopefully quiescent filesystem
+41   the risk is that fsck will fail/crash;
+42   also, it's useful during debugging to check if the on-disk state is
+43   consistent after a crash if the machine is still usable
+44 * run RW/repair fsck on a mounted filesystem, aka the dangerous mode of
+45   xfs_repair:
+46     "Allow xfs_repair to repair an XFS filesystem mounted read only.
+47     This is typically done on a root filesystem from single user mode,
+48     immediately followed by a reboot."
+49
+50
+51 So, all of that should be covered by a --force option
+
+
+Lift the check_mounted in btrfs-check, allow to proceed.
+
+* read-only check
+
+no checks of the mount, ro is easy, rw should crash check if there are changes
+on disk inconsistent with previous state that checker would see
+
+* dangerous repair
+
+allow ‘btrfs check --repair` on a mounted filesytem, see usecase above (and good luck)

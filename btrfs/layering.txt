@@ -1,0 +1,6 @@
+More layering violations
+========================
+
+add some internal device management, grouping, io priorities, target use
+
+eg. smr device for cold storage, with a random io device in front

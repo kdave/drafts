@@ -1,0 +1,27 @@
+﻿Chunk tree mover
+----------------
+
+we can shift the whole filesystem by just recalculating the chunk tree
+
+implementation:
+- shift a partition to the left
+- recalculate the chunk tree with the delta
+- copy superblocks to the expected new locations
+- relocate any conflicting extents with the new superblocks
+
+The chunk tree is typically small, all can be done in memory and stored once.
+The worst problem is handling the conflicts of extents and superblocks.
+
+The first megabyte is free, so shift by less than this will be conflict-less
+with any extents, but this will be a rare case.
+
+Potential conflicts can be identified safely, the relocation of the extents
+can be done safely before the system recalculation.
+
+Normally the metadata blockgroups know if there's a superblock inside, no need
+to account for that extra, just leave a hole there.
+
+It's possible that data chunks might need splitting the chunk at the
+superblock boundary, or not.
+
+Potential ENOSPC problems, should be easy to check ahead of time.

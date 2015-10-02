@@ -1,0 +1,35 @@
+﻿Clear free space
+----------------
+
+* Desc:
+
+Go through all chunks and zero out all unused blocks. Similar to TRIM, but
+available for any type of device.
+
+* Impl:
+
+enhance TRIM code to accept type of the action:
+- TRIM
+- zero out
+- pseudo random
+- pattern fill, eg. something like an empty b-tree leaf
+
+implemented as iocl because the FITRIM ioctl control structure cannot be
+enhanced
+
+possibly, add another FIZERO ioctl number that will take fstrim range but will
+do zero out instead of trim
+
+* Extensions
+
+enhance -o discard and do zero-out instead of trim, needs to enhance option
+parsing:
+
+- discard=trim
+- discard=zero
+- discard=pattern1
+- discard=mixed -> trim for SSD and zero out for HDD
+- discard=strim -> do the secure trim, better name needed
+
+if -o discard=trim,discard=zero, do the mixed mode and do trim if the device
+supports that, otherwise zero out

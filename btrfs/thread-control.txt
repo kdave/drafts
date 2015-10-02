@@ -1,0 +1,5 @@
+﻿Thread control
+--------------
+
+Old idea, add an interface to control the internal threads. Adjust number,
+priorities, query status, wake up possibilities.
