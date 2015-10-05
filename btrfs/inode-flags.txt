@@ -1,0 +1,78 @@
+﻿Inode flags
+-----------
+
+Partial overlap with properties that can be used to set/get the inode
+properties by other way. This describes the optimized way of storage of
+various inode attributes/flags/properties.
+
+List:
+* existing inode attributes -- duplicated!
+  * immutable
+  * append
+  * sync writes
+
+* compression - algorithm
+* autodefrag
+* nodatacow
+* nodatasum
+* nosymlink
+* nohardlink
+* nodefrag
+* readonly
+
+Properties:
+* yes/no value
+* string value -- stored as xattr, eg. compression method
+  * possibly: defragmentation - default, forbid, force, nothing
+
+Storage format
+--------------
+
+Bad idea first: each property is a xattr string
+
+name: btrfs.inode.autodefrag
+value: yes/no/true/false, stored in some simple way
+
+* CON: will take more space in the b-tree metadata, will be slow to process in
+  bulk
+* PRO: straightforward
+
+Packed format: u64
+
+- for each yes/no flag reserve 2 bits, one to represent the actual value,
+  another one for inheritance.
+- with 64 bits it's 32 properties, plus extensibility to generic attr if
+  needed
+- maybe reserve 2 u64, so we have 64 attributes
+
+the value is stored in a xattr:
+  - name: btrfs.inode.flags
+  - value: actual storage is ascii armored u64
+
+Presentation of the value:
+
+- raw hexa value
+- string hexa value
+- verbose flags, eg btrfs.inode.flags = autodefrag,nosymlink
+
+Updates of the value:
+
+- set the value directly via raw or hexa, minmal parsing efforts in kernel,
+  just verify validity of he combination of the values
+- add saner interface that can do only diffs: +autodefrag,+compression=lzo
+
+Performance considerations
+--------------------------
+
+The packed format is cheap for direct lookup calls, generic xattrs can be
+stored at time of read or at time of first need cached in the inode structure,
+synced back when modified
+
+Other
+-----
+
+btrfs.inode.flags - combined
+btrfs.inode.flags.<byname> - individually accessible, only translation
+btrfs.iflags.<byname> -- ???
+
+Inheritance...

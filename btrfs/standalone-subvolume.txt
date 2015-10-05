@@ -1,0 +1,21 @@
+﻿Standalone subvolume
+--------------------
+
+Goal: make subvolumes more independent, preserve some of the features
+
+Introduce new type of subvolume: attach own extent tree to it
+
+* a snapshot will share extents in that tree, and only there
+* reflink works only within the subvolumes of the same extent tree
+* the extent tree will have random tree id
+* the extent tree must be resolved with respect to the owning fstree
+* (unsure) the extent tree shares id with the rest
+  it must be easy to determine extent tree of a fstree, one lookup at most
+
+Feature change:
+* add some flexibility and containment
+* can be used to encrypt subvolumes independently and preserve snapshotting
+* quotas apply only to the extent group -- that can be very tricky in the end
+* relocation should be able to process extents from the same group as if
+  nothing happens, just needs to switch the tree and process only one extent
+  group in one batch, the rest should build on top of the same code
