@@ -1,0 +1,25 @@
+Superblock handling for SMR
+===========================
+
+"rolling superblock"
+
+do not overwrite the superblock in one place
+
+write next superblock update after the last one, if the range is full, erase
+and rewind.
+
+erase and rewind is not atomic, so we need at least 2 copies of the
+superblock, when one is being rotated, the other must hold the last sb version
+
+* backward compatibility
+
+there will be some superblock copy in the expected locations, blkid will be
+albe to identify the filesystem
+
+* mount
+
+look for the latest superblock, highest generation number
+
+* erase and rewind
+
+chunk size is ~256M -> first 2 superblocks match the range

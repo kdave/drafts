@@ -1,0 +1,82 @@
+﻿SMR mode
+--------
+
+add support for SMR devices, respecing the constraints
+
+constraints:
+- only a portion of the disk can be updated randomly
+- most of the device is appendonly per chunk
+- chunk size is variable, can be 256MB or 1G
+- the chunks are aligned
+- the requirements are strict and lead to error if not adhered to
+
+other constraints:
+- the filesystem must be readable anywhere, it's not guaranteed to be writable
+  again if modified outside of SMR environment
+- it would be desirable to shape up any filesystem to be SMR-compatible
+  (userspace relocation, live relocation with the smr mode enabled, reloc
+  should be automatic)
+
+proposed changes:
+- chunk allocator know the alignment constraint
+- chunk allocator allocates with smr-chunk granularity, data/metadata/system
+
+mode of operation:
+
+- each btrfs-chunk, block group, knows it's location and last write pointer
+- extents are allocated at the write pointer
+- data chunks contains live and dead data mixed
+  - live data: there's an active reference to the extents (ie. the latest cow
+    copy)
+  - dead data: all references to the data were dropped
+
+- data and metadata share the same writing logic, COW simply appends data
+- managing data is easier, append extent bytes, the rest is in metadata
+
+- metadata group may be harder, it has to manage data and itself as well
+
+Free space cache:
+
+- due to backward compatibility, the free space cache must be preserved as-is
+- a dead block should be the same as freed one
+- the allocator logic skips free space beneath the blockgroup write pointer
+
+Write pointer:
+
+- the block groups must know the pointer, it might be needed to query the
+  device
+- if data are written ahead of metadata are synced (ie COW phase before SB is
+  stored), the on-disk in metadata stored write pointer might be wrong --
+  attempt to write beneath the write pointer would lead to error
+- threfore, exact write pointer must be obtained in a reliable way
+- extra mount time might be acceptable
+
+Dead chunk reclaim:
+
+- if a chunk is dead, reclaim it and tell SMR to reset the write pointer for
+  that block
+- the assumption is that all unused chunks have the write pointer reset or at
+  least queryable
+- it's ok to start writing to a new chunk from the middle as long as we keep
+  accounting correct, ie. the skipped space is marked as free/dead
+
+SMR status detection:
+
+- a SMR device should be automatically detected and the smr mode enabled,
+  prevent disasters
+
+Superblocks:
+
+- the 0th superblock should normally live in the free zone
+- the 1st superblock might live in the free zone as well, 64MB is not that
+  much
+- the 2nd superblock living at 256G most certainly lives outside of freezone
+  - therefore at most 2 superblocks will be stored
+- 0th SB is guaranteed to be always stored
+- it's possible that the freezone is utilized only by the superblock
+
+Near-dead chunk reclaim:
+
+- if a chunk is under some threshold, reclaim it on the background
+- kind of automatic balance
+- due to writing constraints, underused chunks cannot be refilled
