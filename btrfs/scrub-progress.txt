@@ -1,0 +1,40 @@
+Better scrub progress
+---------------------
+
+What we know:
+
+- size of the devices (need to know the "occupied" size, raw blockdevice size
+  may be different)
+- amount of raw bytes processed, per-device (from ioctl)
+- 
+
+What can be calculated:
+
+- average throughput after some period: processed bytes delta / time
+  - overall (since the start)
+  - last period (say 1 minute)
+- ETA, based on the above
+  - the throughput decreases on spinning devices at higher offsets, so we
+    should be able to somehow extrapolate instead of blindly multiplying
+    initial throughput by amount of data to process
+
+Notes:
+
+- scrub process raw bytes, we have to multiply total size by the raid
+  profiles, and account partial stripes and redundancy
+
+UI enhancements:
+
+- btrfs scrub status (overall)
+
+print best guess ETA, recent throughput and overall throughput
+
+- btrfs scrub status -d (per device)
+
+dtto, for each device
+
+- btrfs scrub status --fancy (progressbar)
+
+Something like:
+
+[====!==/                ] 23%

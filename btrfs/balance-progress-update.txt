@@ -1,0 +1,15 @@
+Updates to balance progress tracking
+------------------------------------
+
+Keep global status for relocation, add a type of current user of the
+relocation (balance, resize, device delete).
+
+Add cancellation points and update status at these points. Keep track of the
+current step being done. Make the stats accessible from any context, possibly
+with cheap locks.
+
+Extend progs commands to use the status information, eg. report resize status.
+
+UI: some commands were not thought with extensibility, so we might go
+inconsistent (ie no subcommand but a --option), or make hacks to make it work
+in places where other param type is expected (btrfs fi resize status /path).
