@@ -1,0 +1,42 @@
+Scrub limited to a subvolume
+============================
+
+Usecase: do a reliable scrub run on a subset of the filesystem, defined by a
+subvolume.
+
+On large filesystems, full scrub takes too long, reading files does not verify
+all block copies and cannot be used as a reliable workaround.
+
+Full scrub
+----------
+
+Scrub enumerates all logical chunks, reads all copies, calculates checksums
+and compares them to the stored checksums.
+
+The logical chunks are stored in the chunk tree, with the mapping to the
+devices. Each logical block is processed exactly once, ie. the shared or
+exclusive blocks.
+
+Subvolume scrub
+---------------
+
+The subvolume owns or shares a set of blocks crossing many logical chunks. In
+order to mimick the full scrub, we have to traverse the whole subvolume, find
+extent mappings to the logical chunks and then do the standard block checksum
+verification.
+
+The naive implementation:
+
+* maintain map of used (shared or exclusive) blocks per logical chunk
+  * potentially merge small ranges, reading a few more bytes does not have a
+    high cost and will save memory to track the used blocks
+* traverse the fs tree of the given subvolume
+  * for each file, enumerate extents, add them to the map of the respective
+    logical chunk
+* run a-la full scrub on each of the used portions of the logical chunks
+  * each used logical block will be processed only once
+
+Seems that we can't avoid completion of traversing pass to be opptimal. If we
+do the partial scrub on a subset of the subvolume, we might end up checking
+some blocks more than once. This can be considered a trade-off without
+affecting reliability, at the cost of more IO.
