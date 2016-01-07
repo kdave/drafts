@@ -1,0 +1,44 @@
+Based on 'Scrub limited to a subvolume', extended interface to scub any set of files
+====================================================================================
+
+REF: scrub-subvolume.txt for intro
+
+Usecase: do a reliable scrub run on a subset of the filesystem, specified by the
+user, as a "scrub transaction"
+
+The scrub control interface is defined by:
+
+* start transaction
+* add files, directories, subvoulmes
+* flush (adding more still posssible)
+* end transaction
+
+
+Start transaction
+-----------------
+
+Initialize the internal state and start accepting "add files" commands.
+
+
+Add files
+---------
+
+Use an ioctl to add files to the scrubbed set. Here the 'file' can be a
+drectory which will recursively add the whole directory hierarchy (applies to
+subvolume as well).
+
+At this point do not do any scanning, just queue a list of requests in memory.
+
+
+Flush
+-----
+
+Process all the queued requests. Scan file extents, build the ranges of chunks
+and then scrub the ranges.
+
+
+End
+---
+
+Stop accepting new file additions, flush eventually, finish the scrub
+transaction.
