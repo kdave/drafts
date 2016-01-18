@@ -1,0 +1,50 @@
+Send stream protocol bump (to v2)
+=================================
+
+Protocol change requests
+------------------------
+
+Missing from v1:
+
+* send extent holes in files efficiently, use hole punching (was not available during v1 time)
+* send preallocated extents properly
+* extent clones within one file
+* send otime for inodes
+* send file flags
+  * (FS_IOC_GETFLAGS/FS_IOC_SETFLAGS), the receiving side misses NOCOW and the
+    other attributes like append-only, immutable etc.
+  * setting the flags on receiving side is tricky as the flags affects if/how the data are stored
+* optionally send owner/group as strings
+
+Other:
+
+stream version recognition
+extend ioctl to produce v1 or v2 formats
+
+Userspace changes
+-----------------
+
+* verify that all callbacks supported by the format are defined [independent]
+
+* new commandline options to specify format version
+
+$ btrfs send --stream-version 2 /path
+
+define maximum, minimum, report supported, query supported
+
+* set the protocol version in the ioctl(SEND) request
+
+* API changes
+
+bump libbtrfs minor version, the send callback structure has changed
+
+Kernel changes
+--------------
+
+* extend ioctl flags with protocol version
+* make protocol mismatch more verbose and user friendly, currently it's just
+  EINVAL
+
+* extend protocol command defintions (patches exist)
+
+* implement new commands (patches exist)
