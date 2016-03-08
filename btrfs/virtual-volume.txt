@@ -1,0 +1,20 @@
+Virtual filesystem volume
+=========================
+
+Provide a thin virtual volume that would be logically encapsulate all devices
+in the filesystem.
+
+This would allow to remove any device from the filesystem, currently it's not
+possible to remove the device from which the filesystem is mounted without
+consequences. Eg. the VFS does not allow to replace the device entry for the
+filesystem.
+
+The virtual device could be accessed directly, redirecting all the reads to
+specific devices, although the mapping could be 1:N for the redundancy raid
+profiles. Direct writes are not necessary, possibly only for testing purposes.
+
+The virtual size of the device may or may not reflect the actual filesystem
+size. The internal logical offsets increase in time and will exceed the size,
+so the virtual device would need to update it's size, or report some fake
+value. As far as the virtual size reflects something sensible, the reads and
+writes may be implemented, otherwise not.
