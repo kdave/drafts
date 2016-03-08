@@ -1,0 +1,17 @@
+Memory allocation failure handling
+==================================
+
+* contexts
+* failure modes
+* recovery modes
+* operational target
+
+Raw notes
+---------
+
+restartable operations, triggered by user can fail and must fail safely with
+cleaning all the intermediate and temporary structures if possible. if not,
+inevitably abort.
+
+noble goal: do not fail on any enomem for the internal operations if possible,
+eg. alloc_path, set state bit, bio alloc
