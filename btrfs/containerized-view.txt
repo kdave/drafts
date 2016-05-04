@@ -1,0 +1,18 @@
+Containerized view
+==================
+
+Usecase: limit view of container, 'df -h' numbers will show only space
+provided by quota
+
+Implementation:
+
+btrfs_statfs will decide which way to report the numbers, either
+full-filesystem (no change) or numbers trimmed by quota.
+
+This requires an external hint that is attached to the subvolume, eg. a mount
+option.
+
+statfs gets a dentry, look up the root, request quota limits, print the
+numbers.
+
+Compatibility: default must not change, ie. full filesystem report by default
