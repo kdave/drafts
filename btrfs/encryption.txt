@@ -1,0 +1,109 @@
+Encryption
+----------
+
+Status: really unreviewed draft, do not draw conclusions
+
+Goal: implement encryption in the filesystem, using state-of-the-art methods,
+      flexible use, keep working as many features as possible
+
+
+Scope of encryption
+-------------------
+
+1) entire filesystem
+
+Equivalent to dm-crypt, but possibly could offer other encryption options, e.g
+not only XTS mode.
+
+Encrypt data and metadata.
+
+1.1) superblock is readable (due to blkid and recognizability in the system,
+eg. no random overwrites), vital data could be hidden to the tree_root
+
+1.2) superblock is unreadable, filesystem not recognizable, no signature
+
+Features work the same way, but cannot be fine-grained, eg. multiple users
+with restricted access
+
+
+2) data blockgroups
+
+Encryption on the blockgoup level, simple block-to-block. Could be for data or
+metadata. Superblock is 1.1.
+
+Similar to 1, but allows encryption of only a part of the filesystem. New
+chunks could be selectively unencrypted, possible to enable encryption after
+the filesystem is created.
+
+
+3) subvolume level
+
+(my preferred option)
+
+The subvolume has a key attached, and has its own extent tree (where the
+extent info sharing is stored). Snapshotting is possible, will inherit the
+key, reflinks would work only between subvolumes that have the same key.
+
+The metadata and data are encrypted. Metadata means the b-tree root block and
+the whole subtree. The only unencrypted data is the directory entry with the
+name of the subvolume, that is stored in the tree_root. The tree_root could
+also store the key info, either separate item or as xattr of the root item.
+
+
+4) file/directory level
+
+Refer to the current ext4 encryption. Only data are encrypted, file metadata
+are not (size, timestamp). The interface is now in vfs, btrfs can be ported.
+
+
+Threat model
+------------
+
+Attacker is able to repeatedly read encrypted data, knows the physical block
+offset.
+May know how some plaintext gets encrypted.
+May choose plaintext and see encrypted result.
+
+
+Information that filesystem offers to store and use
+---------------------------------------------------
+
+The virtual mapping of blocks decouples physical block number where the block
+gets stored.
+
+We can store per-block data of any size: similar how the checksums are stored,
+we could store them encrypted in an own tree or in the csum tree. This depends
+on the overall approach. Storing additional data along the checksums would be
+a minor performance help but is not required if does not fit the encryption
+scheme.
+
+The space for inline checksum of metadata blocks is 32 bytes (256 bits).
+
+
+Known weakneses
+---------------
+
+Blockgroup boundaries could be determined: aligned, known size. The
+corresponding virtual offset of a blockgroup is not predictable but is bounded
+and the value may be guessed from the file age.
+
+Blockgroup virtual offset increases after balance, does not change during
+lifetime.
+
+If we consider full offline access, internal UUIDs (namely of chunk tree)
+cannot be used, stored in any metadata block.
+
+Device numbers are predictable, may be read from the userspace.
+
+
+Open questions
+--------------
+
+Inline file data: probably disable
+
+Extents reserve 2 bytes (btrfs_file_extent_item::encryption): can it be used
+to store extra info to encrypt the corresponding blocks? Extents could
+overlap, but still the extent blocks would be encrypted independently, thus
+using the respective values.
+
+Encryption scheme, what is stored where.
