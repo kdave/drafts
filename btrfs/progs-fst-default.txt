@@ -1,0 +1,119 @@
+Draft: 2018-04-11
+Subject: Make FST default
+
+= Usecases =
+
+== new usage ==
+
+testcase: what to do when FST is used on a new fileystem
+
+$ mkfs.btrfs
+$ mount -o space_cache=v2
+
+
+== forward compatibility ==
+
+testcase: current system has v1, user wants v2
+
+unmounted:
+
+$ mount -o space_cache=v2
+
+OR
+
+already mounted:
+
+$ mount -o remount,space_cache=v2
+
+
+== backward compatibility ==
+
+I have already v2 and need to to v1 again
+
+unmounted:
+
+$ mount -o clear_cache,space_cache=v1
+
+already mounted:
+
+$ mount -o remount,clear_cache,space_cache=v1
+
+
+== troubleshooting ==
+
+=== read-only check ===
+
+I need to fsck my v2 filesystem
+
+$ btrfs check --readonly /image
+
+STATUS: this works
+
+
+=== check needs to repair the fs ===
+
+I need to fsck and repair my v2 filesystem
+
+$ btrfs check --repair /image
+
+STATUS: the code to modify the FST is missing, so all modifications to
+allocations or updated block pointers will lead to inconsistent FST b-tree and
+has to be synced or reconstucted.
+
+This is done at mount time, after userspace sets the "fst invalid" bit. This
+takes time and is not optimal, but at least exists as a workaround.
+
+
+= Testing and usability =
+
+== basic ==
+
+mkfs and mount, the feature is properly reported at mkfs time, mount adds the
+actual tree and reports that it's created
+
+TODO: this can be improved on the kernel side, the message reports raw values
+for the incompat bits
+
+
+== fstests ==
+
+- set mount options to enable FST
+- run full testsuite
+- look for errors and identify which are caused by broken tests and which are
+  potential bugs in btrfs
+
+
+== stress tests ==
+
+use eg. mmtests and run as many workloads as possible
+- dbench
+- fs_mark based
+- fio based: random rw, read, write, sync, parallel, ...
+- workload: mailserver (ffsb, ...)
+- tiobench
+- database workloads (maria, postgre)
+- ...
+
+run fsck after all tests, look for any problems during the tests
+
+
+== performance tests ==
+
+a basic testing coverage of the same workloads on v1 and v2 would be desirable
+but not necessary
+
+
+== powerfail tests ==
+
+partially done by fstests, we may need to test operations that are not
+typically covered like snapshot creation, balance, dev replace -- either
+forcibly interrutped or the underlying device goes offline
+
+
+= Documentation =
+
+Review and proofread documentation, what's the feature, what to expect, "should
+I use it?", switching to/from v1/v2, 'check' support
+
+Look to mailinglist for existing user experience and update docs what's missing
+or unclear.
