@@ -106,6 +106,7 @@ filesystem-wide:
 - compression ratio target
 - label
 - scrub ioprio
+- last scrub status
 
 subvolume:
 - persistent mount options
@@ -124,6 +125,7 @@ device
 - allocation group - project idea "Chunk allocation groups"
 - "ssd cache", L2ARC
 - scrub ioprio
+- last scrub status
 
 filesystem
 - persistent mount options
