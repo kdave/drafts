@@ -4,6 +4,11 @@ Additional checksum algorithms
 
 Current: crc32c
 
+Block sizes:
+
+* for metadata 4K up to 64K, default 16K (split by PAGE_SIZE, most commonly 4K)
+* for data PAGE_SIZE (4K), can be more in the future (4K up to 64K)
+
 Basic criteria:
 
 * **L**: available for use under a GPL2 compatible license
@@ -18,7 +23,10 @@ Additional criteria:
 We want to select at least two additional algorithms: fast-but-weak and strong-but-slow.
 
 *Fast* is used as for checksums in most cases, collisions can happen
-*Strong* is used for checksums too but collisions are expected to be rare, the hashes can be used to hint deduplication
+
+*Strong* is used for checksums too but collisions are expected to be rare, the
+hashes can be used to hint deduplication. The speed should be still reasonable
+on common hardware and not absolutelly terrible ond old or weak hardware.
 
 
 Candidates for **fast** (not in order of preference)
@@ -39,9 +47,12 @@ Candidates for **strong** (in order of preference)
 Compatibility
 -------------
 
-If the implementation is in a separate module, it becomes a dependency for btrfs.ko and must be included in initrd images, similar to crc32c, raid56_xor and its deps.
+If the implementation is in a separate module, it becomes a dependency for
+btrfs.ko and must be included in initrd images, similar to crc32c, raid56_xor
+and its deps.
 
-Fast hashes are usually included directly or available as built-in library code.
+Fast hashes are usually included directly or available as built-in library
+code.
 
 
 Potential enhancements
