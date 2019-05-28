@@ -1,0 +1,50 @@
+Additional checksum algorithms
+==============================
+
+
+Current: crc32c
+
+Basic criteria:
+
+* **L**: available for use under a GPL2 compatible license
+* **C**: available in linux kernel, either as internal library or a crypto module
+* **B**: license that allows use in bootoloaders (at least grub2)
+* maximum digest size is 32 bytes
+
+Additional criteria:
+
+* **S**: standardized (FIPS)
+
+We want to select at least two additional algorithms: fast-but-weak and strong-but-slow.
+
+*Fast* is used as for checksums in most cases, collisions can happen
+*Strong* is used for checksums too but collisions are expected to be rare, the hashes can be used to hint deduplication
+
+
+Candidates for **fast** (not in order of preference)
+
+* SipHash (LCB) -- the SipHash-2-4 variant, digest: 64b
+* xxHash (LCB) -- digest: 64b
+* MurmurHash/...
+* XXH3
+
+
+Candidates for **strong** (in order of preference)
+
+* SHA256 (LCBS)
+* BLAKE2s (?) -- prototype of linux crypto API available
+* SHA3-256 (LCBS)
+
+
+Compatibility
+-------------
+
+If the implementation is in a separate module, it becomes a dependency for btrfs.ko and must be included in initrd images, similar to crc32c, raid56_xor and its deps.
+
+Fast hashes are usually included directly or available as built-in library code.
+
+
+Potential enhancements
+----------------------
+
+Keyed hash to authenticate checksum
