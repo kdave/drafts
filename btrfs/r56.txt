@@ -1,0 +1,193 @@
+RAID56
+------
+
+Data are split to stripes, N - 2, with P and Q for redundancy calculations.
+
+With COW, new stripe is written as a whole. All blocks of the stripe must be
+present at the time of writing. For that there's a cache where read blocks are
+held and evicted in a LRU manner. Blocks that are required are pinned in the
+cache for the duration of the stripe write.
+
+Change to a single block in the stripe triggers full RMW cycle.
+
+Without COW, the data are updated in-place. In case of power failure, the data
+could be mixed from old and new versions and need a way to ensure the
+atomicity of the write.
+
+The parity is calculated as the last step before it gets written. (?) Other
+blocks may be already written and the on-disk state may not be consistent wrt
+parity, but the superblock does not point to data from this generation.
+(Needs further clarification)
+
+
+RMW cycle
+---------
+
+COW update of partial stripe needs a full RMW cycle to recalculate the parity:
+
+* ABCDP on disk
+* read C, pin in cache
+* change C
+* pre-write to disk
+* read A, B, D, to cache
+* calculate P
+* full stripe write of new ABCDP
+
+
+Write hole
+----------
+
+Problem1: when data are updated in-place, the data can be mixed.
+
+Problem2: metadata are written in a way that leaves on-disk inconsisten wrt
+parity until the transaction is committed
+
+Solution: write-ahead-log, that stores written blocks before they're flushed
+to the proper chunks.
+
+The log must be on the same redundancy level as the respective raid56
+profiles, so we need 2-copy for raid5 and 3-copy for raid6.
+
+Write to log must be finished first, the proper write is done later. As it's a
+write cache, there are ways how to flush it:
+
+* synchronous
+  - mark to what offset write is being done
+  - write full stripe to log
+  - mark log-written, replayable
+  - start writing to the proper chunk
+  - log can be marked flushed for this cached stripe
+
+* delayed
+  - mark to what offset write is being done
+  - write full stripe to log
+  - mark log-written, replayable
+
+  in parallel
+  - start writing to the proper chunk
+  - after write is done, log can be marked flushed for this cached stripe
+
+  later
+  - if the log reaches some threshold and the last entry is replayable, rewind
+    the log
+
+
+Log space management
+--------------------
+
+Stripes can be of different length, so entries are variable length too.
+There's one page/sectorsize for stripe metadata.
+
+Stripe:
+- checksum
+- fs UUID
+- target offset
+- stripe size
+- other metadata infor for cross-validation
+- stripe state: writing, replayable
+
+All requested writes will happen, so we can allocate in forward manner as long
+as there's space.
+
+Track the proper writes that happen in parallel, once there's some sequence
+stored permanently, rewind the log.
+
+
+Number of writes
+----------------
+
+N * stripe + parity
+
+
+Mount
+-----
+
+- is this raid56 with log?
+  yes:
+  - find the log
+    - not present, create it
+      - cannot create: we have a problem (ENOSPC, initially overwrite?)
+    - setup
+    - replay is needed
+      yes:
+      - replay data
+    - initialize
+
+
+Balance
+-------
+
+This must work in the following scenarios:
+
+- device deletion must be able to automatically remove the log and possibly
+  move to other devices
+
+- user may want to relocate the logs
+
+- creating raid56 chunks via balance may need other syntax to specify if we
+  want or do not want the log
+
+
+Log lifecycle
+-------------
+
+- created
+  - at mkfs time
+  - at mount time
+  - if new raid56 chunk is created via balance filters
+
+
+Log allocation
+--------------
+
+The log space must be on the raid1-N chunks, the allocation call must force
+the profile.
+
+Mkfs can create that simply, maybe can be more configurable so the devices are
+selected (needs: extended device specification format than we have now)
+
+- preferred profile must be propagated through the allocation callstack
+- the extent must be contiguous, 256MiB minimum
+- created log must not accept new allocations in the meantime
+  (alloc chunk, lock chunks, create, allocate extent, initialize, unlock)
+
+
+DF space report
+---------------
+
+Currently space reporting is inaccurate.
+
+Reporting space for parity profiles is similar as for raid0, but also needs to
+take into account size of the parity.
+
+1) devices of equal size (the easy case)
+
+1.1) stripes span all devices equally, the occupied space is simple
+calculation of the space infos, the remaining space usage can be simulated by
+simply extrapolating
+
+1.2) N stripes on M devices, N < M
+
+this could happen after a new disk is added and full balance hasn't happened
+yet.
+
+occpied space calc is trivial, simulating usage of the rest can:
+1.2.1) continue as-if there's no spare devices, ie. with N stripes spanning
+the remaining space
+
+1.2.2) remaining space will be used over M stripes, as if new allocations were
+done or balance would result to
+
+
+Administration
+--------------
+
+- dedicated devices for log?
+- with/without intent log configurations?
+
+
+QQQQQQQQQQQQQQQQQQQQQQQQ
+------------------------
+
+- reading partial block -> triggers full stripe read, to check parity?
+
