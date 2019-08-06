@@ -31,16 +31,17 @@ on common hardware and not absolutelly terrible ond old or weak hardware.
 
 Candidates for **fast** (not in order of preference)
 
-* SipHash (LCB) -- the SipHash-2-4 variant, digest: 64b
-* xxHash (LCB) -- digest: 64b
-* MurmurHash/...
-* XXH3
+* xxHash (LCB) -- digest: 64b, source: library+module
+* SipHash (LCB) -- the SipHash-2-4 variant, digest: 64b, source: library,
+  unisuitable (only for short strings)
+* MurmurHash3/... -- not in kernel, superseded
+* XXH3 -- WIP, not in kernel, not finalized
 
 
 Candidates for **strong** (in order of preference)
 
 * SHA256 (LCBS)
-* BLAKE2s (?) -- prototype of linux crypto API available
+* BLAKE2s (?) -- prototype of linux crypto API available, license ok
 * SHA3-256 (LCBS)
 
 
@@ -58,4 +59,4 @@ code.
 Potential enhancements
 ----------------------
 
-Keyed hash to authenticate checksum
+Keyed hash to authenticate checksums
