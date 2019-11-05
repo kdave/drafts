@@ -1,0 +1,42 @@
+Userspace events
+----------------
+
+Use kobject_uevents to notify userspace about some important events to
+userspace. The uevents is what udev uses so there's an established way and
+easier (extra data passed a-la shell variables) than raw netlink with custom
+protocol. The events are something like:
+
+* state changes
+  * filesystem size changed
+  * enospc encountered
+  * eio encountered
+  * subvolume created, deleted, cleaned
+  * transaction aborted, filesystem readonly
+* device events
+  * add device
+  * delete device
+  * replace device
+  meta: maybe started, stopped
+* whole filesystem jobs
+  * scrub started, stopped, cancelled
+  * balance started, stopped, cancelled
+  * resized
+* recovery actions
+  * checksum mismatch detected, and repaired
+  * checksum mismatch detected
+
+The environment of the event would contain filesystem UUID, subvolume, path to
+file, device id, etc where applicable.
+
+
+Transport
+---------
+
+Define set of variables that are global, common per-group of events and
+per-event
+
+
+Protocol
+--------
+
+Define values for the variables. Define the events.
