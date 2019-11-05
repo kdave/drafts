@@ -1,5 +1,5 @@
 History
--------
+=======
 
 ```
 > This is a revised version of the original proposal/work from Alexander Block
@@ -158,3 +158,32 @@ be exported through the sysfs, so s/Most of/All/.
 Q: configurable property inheritance
 
 I don’t have a proposal how to mark inheritable props yet.
+
+
+
+Namespace
+=========
+
+btrfs.policy.read.mirror
+
+btrfs.policy.write.mirror
+
+btrfs.cleanup.empty-block-group
+
+btrfs.cleanup.stale-qgroup
+
+btrfs.cleanup
+btrfs.autostart.skip_balance
+
+btrfs.mount.compress
+btrfs.mount.compress-force
+
+btrfs.mount.default
+
+btrfs.alloc.chunk.profile
+
+btrfs.scrub.ioprio
+
+btrfs.scrub.last-status
+
+btrfs.quota.status
