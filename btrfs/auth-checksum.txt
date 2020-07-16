@@ -1,0 +1,84 @@
+Authenticated checksum
+======================
+
+Use keyed hash to calculate checksums for metadata and data
+
+- HMAC + SHA256
+- keyed mode of BLAKE2
+
+Without the key, the filesystem cannot be modified and it's not possible to
+verify checksums, at all.
+
+Alternative: split 32byte checksum buffer to auth and plain part.
+
+- auth uses hmac+sha256 or keyed-blake2
+  - size is at least 16 bytes, more is better
+- plain uses some fast but weak (non-cryptographic) checksum
+  - size is at least 4, more is worse but may be still justified
+  - candidates:
+    - crc32c: +fast, +hw support, +small, -weak
+    - xxhash64: +fast, +cpu support, =small
+    - xxhash32: +fast, +cpu support, +small, -weak, -yet another hash
+
+Example split 24:8, sha256/xxhash64 or blake2b/xxhash64
+
+- 192 bits instead of 256, weaker in case of hash prefix collision
+- evaluation: unclear
+
+The plain hash is hardcoded and not selectable by user to reduce number of
+options.
+
+Final auth proposal
+
+- hmac-sha256
+- hmac-blake2b
+- hmac-sha256-xxhash64
+- hmac-blake2b-xxhash64
+
+Prototype for testing:
+
+- hmac-sha256-crc32c
+- hmac-blake2b-crc32c
+
+Both checksums are calculated at the same time, stored at the same time
+
+Corner cases
+------------
+
+With auth key, auth checksum is valid but plain not:
+- auth is stronger thus trusted, warning should be possible
+
+With auth key, auth checksum is not valid but plain is:
+- dtto, auth is trusted, plain does not matter
+
+Without auth key, auth checksum is not available, plain matches:
+- that's what we want in all cases
+
+Without auth key, auth checksum is not available, plain mismatch:
+- warn but don't change anything, ie. only read-only scrub allowed, reading
+  from other mirrors is possible
+
+Scrub stats track only one kind of checksum failure, maybe we'd need both but
+not necessary. Will be update in scrub stats, on-disk change.
+
+
+Salting data buffer
+-------------------
+
+Salt with fsid, chunk uuid, generation
+
+
+Contraindications
+-----------------
+
+- nodatasum - must be disabled
+- nodatacow - must be disabled
+- free space cache v1 - utilizes nodatasum + nodatacow and has only crc32c
+  protection, space tracking data not authenticated
+  - must be disabled, making v2 mandatory for authentication
+
+- [Qu] fallocate is problem
+  - fallocate uses nodatacow somewhere around preallocation, could be skipped
+    probably (falloc/pralloc is a hint or optimization, only worse performance)
+
+- swapfile requires nodatacow, cannot be supported at the same time
