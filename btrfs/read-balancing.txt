@@ -1,0 +1,65 @@
+Balance data from multiple mirrors
+----------------------------------
+
+Utilize available mirrors to paralelilze reads to get higher read throughput
+
+
+Device properties:
+
+- rotational (yes/no)
+- queue depth (physical device property)
+- minimal batch - devices have readahead and read more than just the amount
+  asked, page cache does readahead as well
+- optimal io size
+
+
+Runtime status:
+
+- last physical offset submitted (potential sequential io)
+- queue filling status
+- last batch of io
+- last within time
+- number of in flight (tracked by btrfs)
+
+
+Decision logic:
+
+The easy cases, pick the fastest idle device for the next Nr requests, then
+switch to another from the same class (idle-fast).
+
+No idle, pick the last if it's within the time slice or the queue is not
+filled or it's a sequential read.
+
+Queue filled, lots of io submitted already, pick next from the same class.
+
+None left from the class, chose slower device and restart selection.
+
+Nothing of the above applies, find the least loaded (in-flight, ...) or do
+round-robin
+
+
+Overall strategy:
+
+We don't need to find the best mirror, it's only a heuristic, so rough
+criteria are fine. IO scheduler has the complete information, our IO
+submission goal is to avod overloading one device and keeping throughput as
+high as practical (regarding tracking the status and decision logic).
+
+
+Example:
+
+RAID1C4, ie 4 copies, we can start 4 threads reading a file range 1-16G, with
+4G on average per device. IO submission process is fast enough to generate
+requests for a large range.
+
+First IO batch will go to device 1 until the queue's full, then switch
+immediately to dev 2, etc. All devices are reading in full.
+
+Second IO batch will depend on device speed and IO completion, so the
+folloging submission will not find idle devices but with queues half empty, or
+a device with low in-flight number. Assuming all from the same class, one will
+be picked, making it not a good candidate for the next round so next time
+another device will be picked with similar status.
+
+Faster devices will be picked more often as their IO will finish sooner and
+devices will be either idle or low on queue.
