@@ -1,0 +1,108 @@
+Mempools
+========
+
+slab caches to convert:
+
+btrfs_end_io_wq_cache
+
+- desirable, the only one is ENOMEM, in many contexts
+- verify the context, around submit bio
+- at raid56 there are a few missing error checks
+
+
+Fallback strategy
+-----------------
+
+Assumptions:
+
+A1. only one data structure is obtained, ie. not more than one mempool can be
+    used
+A2. there's a non-complicated flow: allocate -> work -> free
+    that would replenish the pools once the work is done
+
+* Constraints
+
+We have to take into account that the slab caches are shared accross all
+filesystems and we must guarantee that in the worst case, there's a guarantee
+of progress. Eg. if several filesystems need to allocate lots of the objects
+at once, at least some of them succeed completely and are able to write the
+data and free the objects.
+
+Here we don't want to over-allocate too much, ie. some big per-filesystem
+mempool reserve. The objects would remain unused until the system is under a
+heavy load.
+
+Mempools do some tricks with the allocation flags and are not equvalent to a
+simple fallback to waiting if the slab allocation fails.
+
+ [ REF: Jeff's attempt to use mempools for state bits,
+   http://thread.gmane.org/gmane.comp.file-systems.btrfs/14536
+   https://lore.kernel.org/all/20111124004220.628076319@suse.com/
+   Message-id: 20111124004220.628076319@suse.com ]
+
+Proposed approach:
+
+1. try normal allocation through kmem_cache_alloc
+   - same performance characteristics, no extra locking or accounting
+   - return allocated object and be done
+
+2. if the allocation fails, lock the mempool access for this filesystem,
+   IOW: only one filesystem could be using this mempool, if the requester is
+   the same as the lock owner, use mempool to allocate and return the data
+   - mempool will not fail but will block
+   - forward progress should be guaranteed as the requesting filesystem will
+     free some requests (due to A2)
+
+3. this will lead to starvation in case if there are several filesystems
+   waiting at the mempool lock
+   - a single filesystem will be allowed to request only limited number of
+     objects, once it's batch is exhausted, it will block on the mempool
+     lock
+   - each time the object is freed and the pool is locked, check if the all
+     current alloc requests have been freed, ie. the mempool owner finished
+     all the work and returned everything that he got.
+   - note that the number of requests in flight is at most the batch count but
+     could be less. in both cases the mempool is unlocked and next waiter will
+     get the chance to use the mempool
+   - this depends on the lock fairness, we assume that
+
+4. at some point in time the slab will be available again but the mempool will
+   be still locked. the mempool user will finish the work, all queued waiters
+   will most probably succeed as well in a short time
+
+5. after that, the mempool will become unlocked and all allocations will be
+   done through slab, goto 1
+
+
+Example of slab where this would be used
+----------------------------------------
+
+btrfs_end_io_wq_cache
+
+struct btrfs_end_io_wq {
+        struct bio *               bio;                  /*     0     8 */
+        bio_end_io_t *             end_io;               /*     8     8 */
+        void *                     private;              /*    16     8 */
+        struct btrfs_fs_info *     info;                 /*    24     8 */
+        int                        error;                /*    32     4 */
+        enum btrfs_wq_endio_type   metadata;             /*    36     4 */
+        struct list_head           list;                 /*    40    16 */
+        struct btrfs_work          work;                 /*    56    88 */
+        /* --- cacheline 2 boundary (128 bytes) was 16 bytes ago --- */
+
+        /* size: 144, cachelines: 3, members: 8 */
+        /* last cacheline: 16 bytes */
+};
+
+Assumptions:
+
+A1 - (not 100% sure) does not embed other structures, holds only a few status
+information and pointers
+
+A2 -
+ allocation - used on submit bio paths, reads/writes
+ work       - connect btrfs_end_io_wq to bio, pass this and the bio to blocklayer, read data from disk
+ free       - simply free in end_workqueue_fn callback
+
+Benefits:
+- bio submission is a deep stack context, would fix a lot of breakage

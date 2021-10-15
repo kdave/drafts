@@ -1,0 +1,26 @@
+Library interface to btrfs, simple
+----------------------------------
+
+Provide interface for basic btrfs functionality with ease of use as a goal.
+Eg. use paths for subvolume creations, or just file descriptor, etc.
+
+Proposed library functions:
+* subvolume
+  * create(char *name)
+  * snapshot(char *source, char *target, bool readonly)
+  * delete(char *name), delete(int fd)
+  * inode_to_paths(char *path, u64 inode, char **buffer, size_t size, u64 flags)
+  * various tests:
+    * is btrfs filesystem
+    * is subvolume
+  * get or set default subvolume
+  * defragment range (int fd, from, to, target hint, flags)
+  * resolve inode by extent number
+
+
+The string inteface will open the filesystem, retrieve desired data and close
+the filedescriptors transparently.
+
+File descriptor interface can speed this up, so there'
+
+See libbtrfsutil.

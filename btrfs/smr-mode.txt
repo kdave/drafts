@@ -1,7 +1,7 @@
-﻿Status: implemented, zoned mode
+Status: implemented, zoned mode
 
-SMR mode
---------
+SMR mode (aka zoned mode)
+-------------------------
 
 add support for SMR devices, respecting the constraints
 
@@ -16,12 +16,12 @@ other constraints:
 - the filesystem must be readable anywhere, it's not guaranteed to be writable
   again if modified outside of SMR environment
 - it would be desirable to shape up any filesystem to be SMR-compatible
-  (userspace relocation, live relocation with the smr mode enabled, reloc
+  (userspace relocation, live relocation with the SMR mode enabled, reloc
   should be automatic)
 
 proposed changes:
 - chunk allocator know the alignment constraint
-- chunk allocator allocates with smr-chunk granularity, data/metadata/system
+- chunk allocator allocates with SMR-chunk granularity, data/metadata/system
 
 mode of operation:
 
@@ -50,7 +50,7 @@ Write pointer:
 - if data are written ahead of metadata are synced (ie COW phase before SB is
   stored), the on-disk in metadata stored write pointer might be wrong --
   attempt to write beneath the write pointer would lead to error
-- threfore, exact write pointer must be obtained in a reliable way
+- therefore, exact write pointer must be obtained in a reliable way
 - extra mount time might be acceptable
 
 Dead chunk reclaim:
@@ -64,7 +64,7 @@ Dead chunk reclaim:
 
 SMR status detection:
 
-- a SMR device should be automatically detected and the smr mode enabled,
+- a SMR device should be automatically detected and the SMR mode enabled,
   prevent disasters
 
 Superblocks:

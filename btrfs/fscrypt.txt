@@ -1,0 +1,11 @@
+Random notes on fscrypt integration
+
+- it's everywhere, callbacks etc
+- many interfaces need fscrypt_prepare_OP, mostly no-op, finds out what
+  needs to be done by checking IS_ENCRYPTED and passes data further
+
+- bios are handled in a different way
+
+- decrypt after read
+- at write time, shuffling with pages, switching clear/encrypted
+- touches ->private, check if/how much it interferes with current private use
