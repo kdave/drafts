@@ -1,4 +1,6 @@
-﻿Scrub IO bandwidth control (for real)
+﻿Status: implemented
+
+Scrub IO bandwidth control (for real)
 -------------------------------------
 
 Currently it's possible to specify io priority class for scrub, but it does
