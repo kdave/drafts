@@ -1,3 +1,5 @@
+Status: implemented, zoned mode
+
 Superblock handling for SMR
 ===========================
 

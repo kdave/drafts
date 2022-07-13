@@ -1,7 +1,9 @@
-﻿SMR mode
+﻿Status: implemented, zoned mode
+
+SMR mode
 --------
 
-add support for SMR devices, respecing the constraints
+add support for SMR devices, respecting the constraints
 
 constraints:
 - only a portion of the disk can be updated randomly

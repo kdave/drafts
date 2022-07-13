@@ -1,0 +1,12 @@
+Python interface to the SEARCH_TREE ioctl
+-----------------------------------------
+
+As the b-trees are just the storage, all the logic behind is in the relations
+of the keys and related structures. So write python code for reading the raw
+data from disks and transforming them to objects representing the tree objects
+would be a good start.
+
+Then adding layer of objects that represent the relations, like "file in a
+directory", "subvolume" etc would be built on top of that.
+
+Each b-tree item has it's python object, etc.
