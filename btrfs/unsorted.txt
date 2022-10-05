@@ -1,0 +1,147 @@
+Dumping ground for anything, no details. Some prototypes exist. Incomplete
+list.
+
+# Kernel
+
+## Core
+
+- redo conversion to xarray, patch exists, needs to update locking
+  spinlock->mutex
+- add tracepoints for heuristic
+- uevents
+- fs_context conversion
+- realtime zstd levels
+- transaction context to replace GFP_NOFS
+- background readahead
+- tree checker enhancements
+- iomap
+- DAX
+- snapshot aware defrag again
+- configurable allocators
+- io_uring integration
+- emergency decompression buffer
+- asynchronous checksumming (API change or switch on demand)
+- write intent bitmap for raid56
+- subvolume level encryption
+- per subvolume raid levels
+- autodefrag to its own threads
+- assertions for setget helpers
+- extended debugging (ioctl, sysfs, bpf)
+- cgroup integration
+- faster key in node search, cache friendly
+- remove async commit
+- cache for all scrub pages
+- error handling and BUG_ON removal
+- recursive snapshots
+- swapfile based on direct io
+- own page for superblock writing (no pagecache)
+- backref cycle verification
+- subpage finish
+
+## Fixes
+
+- fix heuristic, running 2x
+- seeding remount bug, snapshot deletion
+- seeding writable device tracking
+
+## Cleanups
+
+- get rid of indirect function calls
+- reduce arguments, sink constants
+- named allocations from generic slabs, sysfs stats
+- reduce RCU string usage, possibly remove
+- reduce btrfs_inode size
+- refactor extent_io_tree, simple range+status tracking
+- bios
+- standalone includes
+
+## UI
+
+- enhance compression error messages
+- configurable message ids
+- synthetic properties and flag representation
+- sysfs updates
+- per transaction mount options
+- per subvolume mount options (remount is the problem)
+- async discard by default
+- properties for all flags
+
+## Features
+
+- authenticated hashes, v3
+- ioctl clear free space
+- ioctl scrub (Qu)
+- ioctl scrub a given subvolume
+- ioctl scrub to track status in kernel, in persistent items
+- ioctl for block based deduplication (memory only)
+- ioctl defrag with more compression options (levels, none, sticky)
+- ioctl metadata preallocation
+- ioctl metadata readahead
+- ioctl cube search (not linear space like search)
+- ioctl start/wait sync rework, drop async commit
+- ioctl search with ioctl to node header
+- send v3 and beyond
+- raid1* load balancing
+- background autobalance
+- one checksum for the whole filesystem, subvolume
+
+# btrfs-progs
+
+- mkfs add compression support
+- mkfs
+- CI again
+- dump chunks
+- dump checksums
+- json output
+- benchmarking command group (hashes, compression, heuristic)
+- switching checksums
+- properties - compression set level
+- subvol delete sync - option to wait until cleanup
+- replace + autoresize
+- replace smaller device
+- send/receive by a KTLS, to a given fd (pipe, socket)
+- autoremove qgroup for deleted subvolume
+- merge btrfstune to main tool
+- convert from xfs
+- explain balance filters
+- fuse module
+- verbose resize
+- user:group map for send/receive
+- repair, restore
+- file dedupe interface
+- file reflink interface
+- clone filesystem
+- search API
+- image format v2
+- fi du with compression (compsize)
+- subvolume list update
+- mkfs device spec, size, slack
+- fsck progress, print last error
+- libbtrfsutil update
+- libbtrfs redux
+- verbosity level review
+- error handling
+- kernel code sync
+- defrag, symlins, cross-subvolume, cross-mount, cross-fs
+- file extent map
+- quick-test.c rework or delete
+- kerncompat.h cleanup
+- merge remaining standalone tools to btrfs (map-logical, select-super,
+  find-root, image?, mkfs?)
+- scan filesystem for features, remove
+- defrag file type heuristics
+- TAP as testing output
+- configurable columns, sorting, filtering, for all relevant commands (like util-linux)
+- accelerated builtin crypto implementation
+- filesystem insights (device span)
+
+## Docs
+
+- complete sysfs docs
+- quick start
+- administration guide
+- cross references
+- explained examples
+- move more pages from wiki to RST
+- developer practices, coding style, patterns
+- image format docs
