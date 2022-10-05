@@ -1,0 +1,46 @@
+Filesystem deduplication -- another way
+=======================================
+
+Goal: provide interface to allow deduplication on part the filesystem, from
+bottom up, ie. from extents
+
+Compare to:
+
+* existing out-of-band dedupe works from a set of files and can replace
+  extents with the same data
+
+* (proposed) in-band-dedupe hashes all data at write time, updates hash tree
+  and eventually dedupes new writes on the fly
+
+
+The new method allows to work from the blocks but still allow use relatively
+large data sample to construct the hash tree and find duplicates.
+
+Runtime performance should be limited to the time the dedupe runs, this gives
+administrator flexibility and expectations of performance hit.
+
+
+How
+---
+
+This works in two phases:
+
+* tell (eg. via ioctl) which files, directories, subvolumes or even file
+  ranges are supposed to be part of the deduplication process
+
+  * this will scan the extents, construct a hash tree
+  * the size of the tree can be limited in advance to give memory bounds, with
+    potentiall losses in the deduplication ratio
+
+* scan the tree for duplicates, link same ranges (ie. the same what the
+  out-of-band does now)
+
+
+Implementation tasks
+--------------------
+
+Extents that are part of deduplication must remain unchanged during the whole
+task, this may block new writes. Alternatively, changes are noted and the
+respective deduplication data are thrown away.
+
+

@@ -1,0 +1,93 @@
+Btrfs implementation in GRUB
+-----------------------------
+
+version: 2.04
+
+Feature compatibility
+~~~~~~~~~~~~~~~~~~~~~
+
+- profiles: all of them (single/DUP/RAID0/10/5,6, RAID1C34 on the way)
+- free space cache: irrelevant, not necessary for read-only access
+- no-holes: transparent, explicit or implicit holes do not affect live data
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+- extref: buggy, see below
+
+- compression: all supported (ZLIB, LZO, ZSTD), inline data and in extents
+- skinny-metadat:
+- mixed-bg: transparent, data and metadata are looked up the same way as in
+  non-mixed mode
+
+
+Problems -- UNSURE MAYBE OK for name-based lookups
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+extref: hardlink tracking when they don't fit to leaf space
+
+File lookup by inode number works by iterating the list of names for a given
+INODE_REF. It's possible that file is not found in case there are too many
+hardlinks that would require the EXTREF functionality.
+
+Risk: low, does not happen in practice for the bootloader files, lookup by
+inode number???
+
+
+
+Operations done
+---------------
+
+- superblock read
+- device enumeration
+- path resolution
+- file data read, extent lookup
+- extent data decompression
+- mirror read
+- data reconstruction from parity
+
+
+Code
+~~~~
+grub.git/grub-core/fs/btrfs.c
+
+The implementation is minimalistic (probably to satisfy size constraints),
+data structures are defined up to the point of the members that are used,
+otherwise only padded to the right offsets.
+
+Data that are read from disk are stored in a simplified cache, storing basic
+information about extents.
+
+On-disk items
+
+Superblock copies are recognized, in case of read failure the backup copies
+are used whenever the generation is newer than the 0th copy. This is
+potentially dangerous -- kernel does not intentionally do that. FSID check
+would be needed as well or skip reading 1st and 2nd copy completely.
+
+Basic metadata block checks are in place (FSID, byte number).
+
+Byte ordering conversions are done at access time, data structures are defined
+as the native CPU types. Proper conversion is not done everywhere, eg.
+debugging messages that print key values (lower_bound).
+
+Device read error handling: simple mirrored profiles look up other copies,
+striped profiles use the parity reconstruction if possible.
+
+Self test coverage:
+- profiles: basic, missing raid5/raid6
+- compression: basic, all covered
+
+Error hanndling: good
+
+Unknown feature handling:
+- block group profiles: OK
+- compression algorithms: OK
+- checksums: not at all
+
+
+Notable points
+--------------
+
+- checksums are not verified at all, neither for data, nor for metadata
+  (including superblock)
+
+

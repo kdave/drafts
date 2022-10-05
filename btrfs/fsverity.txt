@@ -1,0 +1,16 @@
+fs-verity notes
+---------------
+
+Q: lots of new items and compatibility issues
+
+- requires compatibility bit, per inode
+  => expensive? must be? better optinos?
+  - ro-compat (yes)
+  - rw-compat (no)
+
+- orphan inodes
+  - typed orphan, with stranded merkle tree
+
+- encrypt merkle tree, per file, new item required
+
+- container format

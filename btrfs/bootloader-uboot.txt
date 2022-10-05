@@ -1,0 +1,23 @@
+U-Boot bootloader btrfs audit
+-----------------------------
+
+Probably based on userspace code of btrfs-progs from 2017.
+
+Features
+- zlib, lzo, zstd
+- file lookup, read
+- checksums:
+  - only crc32c implemented
+  - superblock checked, not data or metadata
+
+Not implemented
+- multiple devices, thus no raid redundancy etc
+
+Non-issues same as for GRUB (free space, file lookups, dir listing)
+
+Issues
+
+- 3 copies of superblock (1 extra)
+- lzo decompression has the bug with not skipping last bytes when chunk starts
+  at last 4 bytes in a page
+- not enough sanity checks for on-disk structures

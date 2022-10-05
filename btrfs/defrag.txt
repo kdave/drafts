@@ -1,0 +1,8 @@
+Extensions to defrag ioctl
+--------------------------
+
+- extend flags
+- mask supported
+- none as compression to pass
+- level as compression parameter to pass
+- potentially snapshot-aware defrag on/off
