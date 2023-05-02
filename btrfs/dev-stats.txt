@@ -1,0 +1,26 @@
+Device stats update
+-------------------
+
+Current device stats are per whole filesystem and missing some non-error but
+still interesting stats (e.g. number of read auto-repair events). There's no
+distinction of data and metadata errors.
+
+- wrie errors - EIO on data/metadata block writes (reported by lower layers)
+- read errors - dtto on reads
+- corruption errors - checksum errors, wrong bytenr in header (metadata),
+		      detected block contents corruption (metadata, tree-checker)
+- generation errors -
+
+
+Suggested new counters:
+
+- read auto-repair events
+- data checksum errors - separate counter for data
+- metadata checksum errors - separate counter for metadata
+- metadata header bytenr -
+- metadata transid error -
+- metadata block owner error -
+- metadata block key order error -
+- data block group errors -
+- metadata group errors -
+- chunk errors -
