@@ -1,0 +1,52 @@
+Update to defrag ioctl, v2
+--------------------------
+
+There are some feature and functionality requests or things to fix.
+
+Compression:
+
+- level - add ability to specify level under which the defragmentation should
+  happen; this can be different completely what is the current compression for
+  the file or for the mount, so defrag overrides everything ("user knows what
+  to do"), we can possibly add a shortcut to only raise the level from the
+  current so it's not necessary to know which one it is (most likely zstd)
+
+- none - force no compression on the range, ie. if the file is compressed then
+  rewrite all extents uncompressed (obviously breaking sharing), otherwise
+  apply same logic for extent filtering
+
+- sticky - also set the compression method/level (if implemented) for the
+  file, either at the beginning of defrag so it's clear when it starts, or at
+  the end (until then the current setting would applie, maybe this is not
+  wanted)
+
+Extent sharing:
+
+- add flags for extent sharing or breaking request
+  - we don't have snapshot aware defrag anymore but at least we can provide
+    the interface and then make it work
+  - extent breaking will be the default and the only one working
+
+Defrag metadata:
+
+- running defrag ioctl on a directory does actually defragment metadata of the
+  containing subvolume, this can be useful in case the directory or subvolume
+  metadata become fragmented
+  - we can make it defrag only the blocks related to the directory, ie keys
+    with DIR_ENTRY with the dir inode, subset of the whole subvolume
+  - we can have both, either directory or the whole subvolume
+
+Extent slack, bookend extents:
+
+- portions of extents can be completely unreachable due to bookend extents
+  mechanism, this still occupies space and is otherwise skipped
+  - add a filter that selects extents that have a given amount of data
+    invisible and defrag only the live range, drop the rest ("make it compact")
+
+
+Notes:
+
+- space in the ioctl structure is getting tight, something can be pushed to
+  flags only but for anything with range will probably need new space
+
+- a new ioctl number is possible but only as last resort
