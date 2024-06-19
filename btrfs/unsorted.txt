@@ -5,26 +5,23 @@ list.
 
 ## Core
 
-- redo conversion to xarray, patch exists, needs to update locking
-  spinlock->mutex
+- finish conversions to xarray, the API provides preallocation and safe locked
+  checks for presence of the empty item or racing insert
 - add tracepoints for heuristic
 - uevents
-- realtime zstd levels
 - transaction context to replace GFP_NOFS
 - background readahead
 - tree checker enhancements
 - iomap
 - snapshot aware defrag again
 - configurable allocators
-- io_uring integration
 - emergency decompression buffer
 - subvolume level encryption
 - per subvolume raid levels
 - autodefrag to its own threads
 - assertions for setget helpers
 - extended debugging (ioctl, sysfs, bpf)
-- cgroup integration
-- faster key in node search, cache friendly
+- faster key in node/leaf search, cache friendly, optimize jumps
 - remove async commit (ioctl and related functionality)
 - cache for all scrub pages
 - error handling and BUG_ON removal
@@ -32,12 +29,15 @@ list.
 - swapfile based on direct io
 - own page for superblock writing (no pagecache)
 - backref cycle verification
+- (done) cgroup integrations
+- (done) io_uring integrations, find what's still missing
 - (done for metadata) subpage finish
 - (no, discontinued upstream) DAX
 - (no, superseded by rst) write intent bitmap for raid56
 - (done) fs_context conversion
 - (no, API hard to use right, questional benefits) asynchronous checksumming
   (API change or switch on demand)
+- (done) realtime zstd levels
 
 ## Fixes
 
@@ -47,14 +47,16 @@ list.
 
 ## Cleanups
 
-- get rid of indirect function calls
-- reduce arguments, sink constants
 - named allocations from generic slabs, sysfs stats
 - reduce RCU string usage, possibly remove
 - refactor extent_io_tree, simple range+status tracking
 - bios
-- standalone includes
-- iwyu
+- int type unifications, remove size_t other than interfaces, pgoff_t, u64
+  otherwise
+- (continued) reduce arguments, sink constants
+- (continued) standalone includes
+- (continued) iwyu, use LSP with editor
+- (almost done) get rid of indirect function calls
 - (done in 6.10, watch) reduce btrfs_inode size, get size under 1024 in
   maximal config
 
@@ -84,27 +86,22 @@ list.
 - ioctl start/wait sync rework, drop async commit
 - ioctl search with ioctl to node header
 - send v3 and beyond
-- raid1* load balancing
 - one checksum for the whole filesystem, subvolume
 - (wip) background autobalance
 - (done) ioctl scrub (Qu)
+- (done, experimental) raid1* load balancing, test and verify algorithms,
+  promote to default the best one (rr)
 
 # btrfs-progs
 
-- mkfs add compression support
-- mkfs
-- CI again
-- dump chunks
+- mkfs, refactoring, cleanups
 - dump checksums
-- json output
 - benchmarking command group (hashes, compression, heuristic)
 - properties - compression set level
 - subvol delete sync - option to wait until cleanup
 - replace + autoresize
 - replace smaller device
 - send/receive by a KTLS, to a given fd (pipe, socket)
-- (partial, options exist, switch default) autoremove qgroup for deleted
-  subvolume
 - merge btrfstune to main tool
 - convert from xfs
 - explain balance filters
@@ -113,7 +110,6 @@ list.
 - user:group map for send/receive
 - repair, restore
 - file dedupe interface
-- file reflink interface
 - clone filesystem
 - search API
 - image format v2
@@ -121,15 +117,11 @@ list.
 - subvolume list rework
 - mkfs device spec, size, slack
 - fsck progress, print last error
-- libbtrfsutil update
-- libbtrfs redux
 - verbosity level review
 - error handling
-- kernel code sync
 - defrag, symlinks, cross-subvolume, cross-mount, cross-fs
 - file extent map
 - quick-test.c rework or delete
-- kerncompat.h cleanup
 - merge remaining standalone tools to btrfs (map-logical, select-super,
   find-root, image?, mkfs?)
 - scan filesystem for features, remove
@@ -137,8 +129,18 @@ list.
 - TAP as testing output
 - configurable columns, sorting, filtering, for all relevant commands (like util-linux)
 - filesystem insights (device span)
+- (experimental) file reflink interface
+- (continued) json output
+- (continued) libbtrfsutil update
+- (continued) kernel code sync
+- (continued) kerncompat.h cleanup
+- (done) CI again, GH seem to work, update as needed
 - (done) accelerated builtin crypto implementation
 - (done) switching checksums
+- (done) mkfs add compression support
+- (done) dump chunks
+- (done) autoremove qgroup for deleted subvolume (kernel)
+- (done) libbtrfs redux, do not touch
 
 ## Docs
 
