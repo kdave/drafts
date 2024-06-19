@@ -1,4 +1,6 @@
-﻿FAR stream description
+﻿Status: done, in documentation
+
+FAR stream description
 ----------------------
 
 version 1, used in btrfs

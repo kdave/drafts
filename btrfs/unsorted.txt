@@ -9,19 +9,15 @@ list.
   spinlock->mutex
 - add tracepoints for heuristic
 - uevents
-- fs_context conversion
 - realtime zstd levels
 - transaction context to replace GFP_NOFS
 - background readahead
 - tree checker enhancements
 - iomap
-- DAX
 - snapshot aware defrag again
 - configurable allocators
 - io_uring integration
 - emergency decompression buffer
-- asynchronous checksumming (API change or switch on demand)
-- write intent bitmap for raid56
 - subvolume level encryption
 - per subvolume raid levels
 - autodefrag to its own threads
@@ -29,14 +25,19 @@ list.
 - extended debugging (ioctl, sysfs, bpf)
 - cgroup integration
 - faster key in node search, cache friendly
-- remove async commit
+- remove async commit (ioctl and related functionality)
 - cache for all scrub pages
 - error handling and BUG_ON removal
 - recursive snapshots
 - swapfile based on direct io
 - own page for superblock writing (no pagecache)
 - backref cycle verification
-- subpage finish
+- (done for metadata) subpage finish
+- (no, discontinued upstream) DAX
+- (no, superseded by rst) write intent bitmap for raid56
+- (done) fs_context conversion
+- (no, API hard to use right, questional benefits) asynchronous checksumming
+  (API change or switch on demand)
 
 ## Fixes
 
@@ -50,27 +51,29 @@ list.
 - reduce arguments, sink constants
 - named allocations from generic slabs, sysfs stats
 - reduce RCU string usage, possibly remove
-- reduce btrfs_inode size
 - refactor extent_io_tree, simple range+status tracking
 - bios
 - standalone includes
+- iwyu
+- (done in 6.10, watch) reduce btrfs_inode size, get size under 1024 in
+  maximal config
 
 ## UI
 
-- enhance compression error messages
 - configurable message ids
 - synthetic properties and flag representation
 - sysfs updates
 - per transaction mount options
-- per subvolume mount options (remount is the problem)
-- async discard by default
+- per subvolume mount options (remount is the problem, revisit after new mount
+  API)
 - properties for all flags
+- (done) async discard by default
+- (done) enhance compression error messages
 
 ## Features
 
 - authenticated hashes, v3
 - ioctl clear free space
-- ioctl scrub (Qu)
 - ioctl scrub a given subvolume
 - ioctl scrub to track status in kernel, in persistent items
 - ioctl for block based deduplication (memory only)
@@ -82,8 +85,9 @@ list.
 - ioctl search with ioctl to node header
 - send v3 and beyond
 - raid1* load balancing
-- background autobalance
 - one checksum for the whole filesystem, subvolume
+- (wip) background autobalance
+- (done) ioctl scrub (Qu)
 
 # btrfs-progs
 
@@ -94,13 +98,13 @@ list.
 - dump checksums
 - json output
 - benchmarking command group (hashes, compression, heuristic)
-- switching checksums
 - properties - compression set level
 - subvol delete sync - option to wait until cleanup
 - replace + autoresize
 - replace smaller device
 - send/receive by a KTLS, to a given fd (pipe, socket)
-- autoremove qgroup for deleted subvolume
+- (partial, options exist, switch default) autoremove qgroup for deleted
+  subvolume
 - merge btrfstune to main tool
 - convert from xfs
 - explain balance filters
@@ -114,7 +118,7 @@ list.
 - search API
 - image format v2
 - fi du with compression (compsize)
-- subvolume list update
+- subvolume list rework
 - mkfs device spec, size, slack
 - fsck progress, print last error
 - libbtrfsutil update
@@ -122,7 +126,7 @@ list.
 - verbosity level review
 - error handling
 - kernel code sync
-- defrag, symlins, cross-subvolume, cross-mount, cross-fs
+- defrag, symlinks, cross-subvolume, cross-mount, cross-fs
 - file extent map
 - quick-test.c rework or delete
 - kerncompat.h cleanup
@@ -132,8 +136,9 @@ list.
 - defrag file type heuristics
 - TAP as testing output
 - configurable columns, sorting, filtering, for all relevant commands (like util-linux)
-- accelerated builtin crypto implementation
 - filesystem insights (device span)
+- (done) accelerated builtin crypto implementation
+- (done) switching checksums
 
 ## Docs
 
@@ -145,3 +150,4 @@ list.
 - move more pages from wiki to RST
 - developer practices, coding style, patterns
 - image format docs
+- ioctl documentation
