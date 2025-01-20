@@ -1,0 +1,14 @@
+File attribute extensions
+-------------------------
+
+Overlap with inode-flags.txt and maybe others.
+
+Use existing interfaces for file attributes or flags to add new semantics and features. Most of them need incompat bit and and respective on-disk format representation.
+
+- NOSYMLINK (XFLAG) - forbid creating symlinks in that directory, now implemented only by xfs, can be generic
+- NODEFRAG (XFLAG) - don't defragment the file if requested, implemented by xfs
+- NOTAIL (attribute) - repurpose NOTAIL file attribute as "no inline" semantics of btrfs, as reiserfs is gone
+- CASEFOLD (attribute) - implement case folding (case-insensitive directory lookup), needs update to lookup and has some quirks regarding encoding
+
+Remaining questions are about inheritability from parent directory. More
+attributes may be repurposed or used (e.g. compression).
