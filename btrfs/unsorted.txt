@@ -29,14 +29,17 @@ list.
 - swapfile based on direct io
 - own page for superblock writing (no pagecache)
 - backref cycle verification
+- more assertions in async callbacks or deep callstacks
+- error handling of impossible ASSERT(0) (wire to shutdown)
+- reduce GFP_ATOMIC if not needed
 - (done) cgroup integrations
 - (done) io_uring integrations, find what's still missing
 - (done for metadata) subpage finish
 - (no, discontinued upstream) DAX
 - (no, superseded by rst) write intent bitmap for raid56
 - (done) fs_context conversion
-- (no, API hard to use right, questional benefits) asynchronous checksumming
-  (API change or switch on demand)
+- (no, API hard to use right, questionable benefits, removed) asynchronous
+  checksumming (API change or switch on demand)
 - (done) realtime zstd levels
 
 ## Fixes
@@ -45,14 +48,38 @@ list.
 - seeding remount bug, snapshot deletion
 - seeding writable device tracking
 
-## Cleanups
+## Optimizations
+
+- struct member redundancy (bbio)
+- struct size optimizations, hole removal, access pattern
+
+## Cleanups, refactoring
 
 - named allocations from generic slabs, sysfs stats
 - reduce RCU string usage, possibly remove
 - refactor extent_io_tree, simple range+status tracking
 - bios
-- int type unifications, remove size_t other than interfaces, pgoff_t, u64
-  otherwise
+- int type unifications, remove size_t other than interfaces, pgoff_t for page
+  index, u64 otherwise
+- naming unification, prefixes
+- drop simple helpers unless providing a value
+- static inline misuse
+- noinline review and removal
+- __pure or __const attributes, review, add
+- __cold attribures
+- unlikely annotations for impossible branches
+- int / bool misuse
+- for () inline declarations
+- ret, ret2, err unification
+- btrfs_path autofree, add more
+- ASSERT, verbose
+- factor out if (zoned) and other to helpers
+- inode and btrfs_inode conversions
+- reconsider WARN_ON, replace with DEBUG_WARN
+- named enums, replace int
+- (continued) redundant parameter removal
+- (continued) use helpers where not done yet (list, rb, ...)
+- (continued) parameter constifications (our, other API)
 - (continued) reduce arguments, sink constants
 - (continued) standalone includes
 - (continued) iwyu, use LSP with editor
@@ -75,8 +102,8 @@ list.
 ## Features
 
 - authenticated hashes, v3
-- ioctl clear free space
-- ioctl scrub a given subvolume
+- one checksum for the whole filesystem, subvolume
+- metadata_ratio review
 - ioctl scrub to track status in kernel, in persistent items
 - ioctl for block based deduplication (memory only)
 - ioctl defrag with more compression options (levels, none, sticky)
@@ -85,12 +112,18 @@ list.
 - ioctl cube search (not linear space like search)
 - ioctl start/wait sync rework, drop async commit
 - ioctl search with ioctl to node header
-- send v3 and beyond
-- one checksum for the whole filesystem, subvolume
+- ioctl send v3 and beyond
+- ioctl shutdown, wire to eb member out of bounds access, checkpoints
+- (wip) ioctl clear free space
+- (wip) ioctl scrub a given subvolume
 - (wip) background autobalance
 - (done) ioctl scrub (Qu)
 - (done, experimental) raid1* load balancing, test and verify algorithms,
   promote to default the best one (rr)
+
+## Feature removals
+
+- free space cache v1, schedule to 7.0
 
 # btrfs-progs
 
@@ -129,6 +162,7 @@ list.
 - TAP as testing output
 - configurable columns, sorting, filtering, for all relevant commands (like util-linux)
 - filesystem insights (device span)
+- forced chunk allocation
 - (experimental) file reflink interface
 - (continued) json output
 - (continued) libbtrfsutil update
